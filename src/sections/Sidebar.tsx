@@ -44,7 +44,7 @@ export function Sidebar() {
 
           <div className="flex items-center justify-center gap-1 text-sm text-gray-500 mb-4">
             <MapPin className="w-4 h-4" />
-            <span>中国 · 北京</span>
+            <span>中国 · 浙江</span>
           </div>
 
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">

@@ -25,7 +25,7 @@ interface PostModalProps {
 
 export function PostModal({ slug, isOpen, onClose }: PostModalProps) {
   const { post, loading, error } = useBlogPost(slug || '');
-  const { liked, likeCount, likePost } = useLikePost(post?.id || '');
+  const { liked, likeCount, likePost } = useLikePost(post?.id || '', post?.likes || 0);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {

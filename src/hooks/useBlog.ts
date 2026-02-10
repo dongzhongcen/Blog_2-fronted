@@ -91,7 +91,7 @@ export function useComments(postId: string) {
       const response = await fetch(`${API_BASE_URL}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId, content, author }),
+        body: JSON.stringify({ postId: parseInt(postId), content, author }),
       });
       if (!response.ok) throw new Error('Failed to add comment');
       const data = await response.json();
@@ -108,12 +108,13 @@ export function useComments(postId: string) {
       const response = await fetch(`${API_BASE_URL}/likes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ commentId }),
+        body: JSON.stringify({ type: 'comment', id: parseInt(commentId) }),
       });
       if (!response.ok) throw new Error('Failed to like comment');
+      const data = await response.json();
       setComments((prev) =>
         prev.map((c) =>
-          c.id === commentId ? { ...c, likes: c.likes + 1 } : c
+          c.id === commentId ? { ...c, likes: data.liked ? c.likes + 1 : Math.max(0, c.likes - 1) } : c
         )
       );
       return true;
@@ -126,40 +127,43 @@ export function useComments(postId: string) {
   return { comments, loading, addComment, likeComment };
 }
 
-export function useLikePost(postId: string) {
+export function useLikePost(postId: string, initialLikes: number = 0) {
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(initialLikes);
 
   useEffect(() => {
     // Check if user has liked this post
     const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
     setLiked(likedPosts.includes(postId));
-  }, [postId]);
+    setLikeCount(initialLikes);
+  }, [postId, initialLikes]);
 
   const likePost = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/likes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId }),
+        body: JSON.stringify({ type: 'post', id: parseInt(postId) }),
       });
       if (!response.ok) throw new Error('Failed to like post');
       
+      const data = await response.json();
       const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
       
-      if (liked) {
-        // Unlike
-        const updated = likedPosts.filter((id: string) => id !== postId);
-        localStorage.setItem('likedPosts', JSON.stringify(updated));
-        setLiked(false);
-        setLikeCount((prev) => Math.max(0, prev - 1));
-      } else {
-        // Like
-        likedPosts.push(postId);
-        localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+      if (data.liked) {
+        // Liked
+        if (!likedPosts.includes(postId)) {
+          likedPosts.push(postId);
+        }
         setLiked(true);
         setLikeCount((prev) => prev + 1);
+      } else {
+        // Unliked
+        const updated = likedPosts.filter((id: string) => id !== postId);
+        setLiked(false);
+        setLikeCount((prev) => Math.max(0, prev - 1));
       }
+      localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
       return true;
     } catch (err) {
       console.error('Failed to like post', err);
