@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import BlogPage from '@/pages/BlogPage';
 import AllPostsPage from '@/pages/AllPostsPage';
 import AdminPage from '@/pages/AdminPage';
+import { LoadingScreen } from '@/components/LoadingScreen';
 import './App.css';
 
 // AnimatedRoutes component to handle page transitions
@@ -21,8 +23,19 @@ function AnimatedRoutes() {
 }
 
 function App() {
+  const [isLoading, setIsLoading] = useState(true);
+
   return (
     <BrowserRouter>
+      {/* 进场加载动画 */}
+      {isLoading && (
+        <LoadingScreen 
+          onLoadingComplete={() => setIsLoading(false)}
+          minimumLoadTime={3000}
+        />
+      )}
+      
+      {/* 主应用内容 */}
       <AnimatedRoutes />
     </BrowserRouter>
   );

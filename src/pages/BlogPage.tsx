@@ -24,13 +24,14 @@ import {
   Calendar,
   Award,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTransition, HoverCard } from '@/components/PageTransition';
 import { useNavigate, Link } from 'react-router-dom';
-import { useBlogPosts } from '@/hooks/useBlog';
+import { useRealtimePosts, DataStatusIndicator } from '@/hooks/useRealtime';
 import { PostModal } from '@/components/PostModal';
 
 // Types
@@ -273,7 +274,7 @@ export default function BlogPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular' | 'mostLiked'>('newest');
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   
-  const { posts, loading } = useBlogPosts();
+  const { posts, loading, refresh, forceRefresh, lastUpdated, isStale } = useRealtimePosts(30000);
   const navigate = useNavigate();
 
   const homeRef = useRef<HTMLDivElement | null>(null);
@@ -1133,6 +1134,13 @@ export default function BlogPage() {
         slug={selectedSlug}
         isOpen={isModalOpen}
         onClose={closeModal}
+      />
+
+      {/* 数据实时状态指示器 */}
+      <DataStatusIndicator
+        lastUpdated={lastUpdated}
+        isStale={isStale}
+        onRefresh={forceRefresh}
       />
     </PageTransition>
   );
