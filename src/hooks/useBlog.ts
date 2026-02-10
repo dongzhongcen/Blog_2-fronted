@@ -101,12 +101,16 @@ export function useComments(postId: string) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId: parseInt(postId), content, author }),
       });
-      if (!response.ok) throw new Error('Failed to add comment');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to add comment: ${response.status}`);
+      }
       const data = await response.json();
       setComments((prev) => [data.comment, ...prev]);
       return true;
     } catch (err) {
       console.error('Failed to add comment', err);
+      alert('评论发表失败：' + (err instanceof Error ? err.message : '请重试'));
       return false;
     }
   }, [postId]);
@@ -142,12 +146,33 @@ export function useComments(postId: string) {
 export function useLikePost(postId: string, initialLikes: number = 0) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(initialLikes);
+  const [loading, setLoading] = useState(true);
 
+  // 从服务器获取点赞状态和总点赞数
   useEffect(() => {
-    // Check if user has liked this post
-    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
-    setLiked(likedPosts.includes(postId));
-    setLikeCount(initialLikes);
+    const checkLikeStatus = async () => {
+      if (!postId) return;
+      setLoading(true);
+      try {
+        // 获取服务器点赞状态（基于 IP）
+        const response = await fetch(`${API_BASE_URL}/likes/check?type=post&id=${postId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setLiked(data.liked);
+        }
+        // 使用传入的初始点赞数
+        setLikeCount(initialLikes);
+      } catch (err) {
+        console.error('Failed to check like status:', err);
+        // 如果服务器检查失败，使用本地存储作为备用
+        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+        setLiked(likedPosts.includes(postId));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkLikeStatus();
   }, [postId, initialLikes]);
 
   const likePost = useCallback(async () => {
@@ -157,32 +182,38 @@ export function useLikePost(postId: string, initialLikes: number = 0) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'post', id: parseInt(postId) }),
       });
-      if (!response.ok) throw new Error('Failed to like post');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to like post');
+      }
       
       const data = await response.json();
-      const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
       
+      // 更新本地状态
       if (data.liked) {
-        // Liked
-        if (!likedPosts.includes(postId)) {
-          likedPosts.push(postId);
-        }
-        localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
         setLiked(true);
         setLikeCount((prev) => prev + 1);
+        // 同步到 localStorage
+        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+        if (!likedPosts.includes(postId)) {
+          likedPosts.push(postId);
+          localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+        }
       } else {
-        // Unliked
-        const updated = likedPosts.filter((id: string) => id !== postId);
-        localStorage.setItem('likedPosts', JSON.stringify(updated));
         setLiked(false);
         setLikeCount((prev) => Math.max(0, prev - 1));
+        // 同步到 localStorage
+        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+        const updated = likedPosts.filter((id: string) => id !== postId);
+        localStorage.setItem('likedPosts', JSON.stringify(updated));
       }
       return true;
     } catch (err) {
       console.error('Failed to like post', err);
+      alert('点赞失败，请重试');
       return false;
     }
-  }, [postId, liked]);
+  }, [postId]);
 
-  return { liked, likeCount, likePost };
+  return { liked, likeCount, likePost, loading };
 }

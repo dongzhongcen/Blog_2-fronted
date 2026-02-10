@@ -25,7 +25,7 @@ interface PostModalProps {
 
 export function PostModal({ slug, isOpen, onClose }: PostModalProps) {
   const { post, loading, error } = useBlogPost(slug || '');
-  const { liked, likeCount, likePost } = useLikePost(post?.id || '', post?.likes || 0);
+  const { liked, likeCount, likePost, loading: likeLoading } = useLikePost(post?.id || '', post?.likes || 0);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
@@ -147,10 +147,11 @@ export function PostModal({ slug, isOpen, onClose }: PostModalProps) {
                       variant="outline"
                       size="sm"
                       onClick={likePost}
+                      disabled={likeLoading}
                       className={liked ? 'text-red-500 border-red-500/50 bg-red-500/10' : 'border-white/20'}
                     >
-                      <Heart className={`w-4 h-4 mr-1 ${liked ? 'fill-current' : ''}`} />
-                      {likeCount || post.likes}
+                      <Heart className={`w-4 h-4 mr-1 ${liked ? 'fill-current' : ''} ${likeLoading ? 'animate-pulse' : ''}`} />
+                      {likeLoading ? '...' : (likeCount || post.likes)}
                     </Button>
                     <Button
                       variant="outline"
