@@ -75,7 +75,7 @@ export function LoadingScreen({
 
   // 阶段切换控制
   useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
     
     // 阶段 1: 正方形出现
     timers.push(setTimeout(() => setPhase('split'), 600));
