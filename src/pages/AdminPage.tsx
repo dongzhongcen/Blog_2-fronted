@@ -732,7 +732,10 @@ function CommentsManagement({ comments, posts, onRefresh }: { comments: Comment[
 }
 
 // Stats Component
-function StatsView({ posts, _comments }: { posts: Post[]; _comments: Comment[] }) {
+function StatsView({ posts, comments }: { posts: Post[]; comments: Comment[] }) {
+  // Comments parameter is reserved for future use
+  void comments;
+  
   // Calculate monthly stats
   const monthlyStats = posts.reduce((acc, post) => {
     const month = new Date(post.publishedAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short' });
@@ -1033,7 +1036,7 @@ export default function AdminPage() {
       case 'comments':
         return <CommentsManagement comments={comments} posts={posts} onRefresh={fetchData} />;
       case 'stats':
-        return <StatsView posts={posts} _comments={comments} />;
+        return <StatsView posts={posts} comments={comments} />;
       default:
         return <Dashboard stats={stats} recentPosts={posts.slice(0, 5)} />;
     }
