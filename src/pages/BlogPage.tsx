@@ -31,7 +31,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTransition, HoverCard } from '@/components/PageTransition';
 import { useNavigate, Link } from 'react-router-dom';
-import { useRealtimePosts, DataStatusIndicator } from '@/hooks/useRealtime';
+import { useRealtimePosts } from '@/hooks/useRealtime';
+import { DataStatusIndicator } from '@/components/DataStatusIndicator';
 import { PostModal } from '@/components/PostModal';
 
 // Types
