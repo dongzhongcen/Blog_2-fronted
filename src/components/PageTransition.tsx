@@ -6,9 +6,6 @@ interface PageTransitionProps {
   mode?: 'slide' | 'fade' | 'scale' | 'flip';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _unused = null;
-
 const transitions = {
   slide: {
     initial: { x: 300, opacity: 0 },
@@ -58,9 +55,6 @@ interface AnimatedRoutesProps {
   location: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _unused2 = null;
-
 export function AnimatedRoutes({ children, location }: AnimatedRoutesProps) {
   return (
     <AnimatePresence mode="wait">
@@ -87,9 +81,6 @@ interface HoverCardProps {
   className?: string;
   scale?: number;
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _unused3 = null;
 
 export function HoverCard({ children, className = '', scale = 1.02 }: HoverCardProps) {
   return (
@@ -118,9 +109,6 @@ interface StaggerContainerProps {
   className?: string;
   staggerDelay?: number;
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _unused4 = null;
 
 export function StaggerContainer({ children, className = '', staggerDelay = 0.1 }: StaggerContainerProps) {
   return (

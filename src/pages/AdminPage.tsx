@@ -732,8 +732,7 @@ function CommentsManagement({ comments, posts, onRefresh }: { comments: Comment[
 }
 
 // Stats Component
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function StatsView({ posts, comments }: { posts: Post[]; comments: Comment[] }) {
+function StatsView({ posts, _comments }: { posts: Post[]; _comments: Comment[] }) {
   // Calculate monthly stats
   const monthlyStats = posts.reduce((acc, post) => {
     const month = new Date(post.publishedAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short' });
@@ -1034,7 +1033,7 @@ export default function AdminPage() {
       case 'comments':
         return <CommentsManagement comments={comments} posts={posts} onRefresh={fetchData} />;
       case 'stats':
-        return <StatsView posts={posts} comments={comments} />;
+        return <StatsView posts={posts} _comments={comments} />;
       default:
         return <Dashboard stats={stats} recentPosts={posts.slice(0, 5)} />;
     }
