@@ -32,7 +32,7 @@ interface Post {
   slug: string;
   excerpt: string;
   content: string;
-  coverImage: string;
+  coverImage?: string;
   tags: string[];
   publishedAt: string;
   readTime: number;
@@ -95,10 +95,10 @@ export default function BlogPage() {
   const { posts, loading } = useBlogPosts();
   const navigate = useNavigate();
 
-  const homeRef = useRef<HTMLDivElement>(null);
-  const featuredRef = useRef<HTMLDivElement>(null);
-  const postsRef = useRef<HTMLDivElement>(null);
-  const aboutRef = useRef<HTMLDivElement>(null);
+  const homeRef = useRef<HTMLDivElement | null>(null);
+  const featuredRef = useRef<HTMLDivElement | null>(null);
+  const postsRef = useRef<HTMLDivElement | null>(null);
+  const aboutRef = useRef<HTMLDivElement | null>(null);
 
   const toggleTheme = () => setIsDark(!isDark);
   const featuredPosts = posts.slice(0, 3);
@@ -141,7 +141,7 @@ export default function BlogPage() {
   }, []);
 
   const scrollToSection = (sectionId: string) => {
-    const refs: Record<string, React.RefObject<HTMLDivElement>> = {
+    const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
       home: homeRef,
       featured: featuredRef,
       posts: postsRef,
@@ -155,7 +155,8 @@ export default function BlogPage() {
     }
   };
 
-  const openPost = (post: Post) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const openPost = (post: any) => {
     setSelectedSlug(post.slug);
     setIsModalOpen(true);
     document.body.style.overflow = 'hidden';

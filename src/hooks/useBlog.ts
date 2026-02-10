@@ -160,10 +160,10 @@ export function useLikePost(postId: string, initialLikes: number = 0) {
       } else {
         // Unliked
         const updated = likedPosts.filter((id: string) => id !== postId);
+        localStorage.setItem('likedPosts', JSON.stringify(updated));
         setLiked(false);
         setLikeCount((prev) => Math.max(0, prev - 1));
       }
-      localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
       return true;
     } catch (err) {
       console.error('Failed to like post', err);

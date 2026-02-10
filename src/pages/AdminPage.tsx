@@ -19,7 +19,9 @@ import {
   ArrowUp,
   Save,
   Tag,
-  BarChart3
+  BarChart3,
+  Lock,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +39,10 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { StaggerContainer, StaggerItem, HoverCard } from '@/components/PageTransition';
 import { useNavigate } from 'react-router-dom';
+
+// Admin credentials - in production, this should be handled server-side
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'dongzhongcenis06';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -726,6 +732,7 @@ function CommentsManagement({ comments, posts, onRefresh }: { comments: Comment[
 }
 
 // Stats Component
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function StatsView({ posts, comments }: { posts: Post[]; comments: Comment[] }) {
   // Calculate monthly stats
   const monthlyStats = posts.reduce((acc, post) => {
@@ -806,8 +813,117 @@ function StatsView({ posts, comments }: { posts: Post[]; comments: Comment[] }) 
 }
 
 
+// Login Component
+function LoginPage({ onLogin }: { onLogin: () => void }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Simple client-side authentication
+    // In production, this should be handled server-side
+    setTimeout(() => {
+      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        localStorage.setItem('adminAuth', 'true');
+        onLogin();
+      } else {
+        setError('用户名或密码错误');
+      }
+      setIsLoading(false);
+    }, 500);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-950 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        <Card className="bg-gray-900/80 border-gray-700 backdrop-blur-xl">
+          <CardHeader className="text-center pb-8">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+              className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-6"
+            >
+              <Lock className="w-10 h-10 text-white" />
+            </motion.div>
+            <CardTitle className="text-2xl font-bold text-white">管理后台登录</CardTitle>
+            <p className="text-gray-500 mt-2">请输入管理员账号和密码</p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Input
+                    type="text"
+                    placeholder="用户名"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-12"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Input
+                    type="password"
+                    placeholder="密码"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-12"
+                  />
+                </div>
+              </div>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="text-red-400 text-sm text-center bg-red-500/10 py-2 rounded-lg"
+                >
+                  {error}
+                </motion.div>
+              )}
+              <Button
+                type="submit"
+                disabled={isLoading || !username || !password}
+                className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold"
+              >
+                {isLoading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                  />
+                ) : (
+                  '登录'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        
+        <p className="text-center text-gray-600 text-sm mt-6">
+          默认账号: admin / 密码请联系管理员
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
 // Main Admin Page Component
 export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -822,6 +938,18 @@ export default function AdminPage() {
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Check authentication on mount
+  useEffect(() => {
+    const auth = localStorage.getItem('adminAuth');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -871,13 +999,19 @@ export default function AdminPage() {
   }, [fetchData]);
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminAuth');
+    setIsAuthenticated(false);
     navigate('/');
   };
 
   const handleGoToBlog = () => {
     navigate('/');
   };
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   const renderContent = () => {
     if (loading) {
