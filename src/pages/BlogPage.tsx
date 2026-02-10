@@ -24,8 +24,7 @@ import {
   Calendar,
   Award,
   Briefcase,
-  GraduationCap,
-  RefreshCw
+  GraduationCap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -275,7 +274,7 @@ export default function BlogPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular' | 'mostLiked'>('newest');
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   
-  const { posts, loading, refresh, forceRefresh, lastUpdated, isStale } = useRealtimePosts(30000);
+  const { posts, loading, forceRefresh, lastUpdated, isStale } = useRealtimePosts(30000);
   const navigate = useNavigate();
 
   const homeRef = useRef<HTMLDivElement | null>(null);

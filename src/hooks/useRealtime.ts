@@ -10,7 +10,7 @@ export function useRealtimePosts(refreshInterval = 30000) {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isStale, setIsStale] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 获取最新数据
   const fetchPosts = useCallback(async (showLoading = true) => {
@@ -28,9 +28,6 @@ export function useRealtimePosts(refreshInterval = 30000) {
       const data = await response.json();
       
       setPosts(prevPosts => {
-        // 合并新旧数据，保留本地未同步的更改
-        const newPostsMap = new Map(data.posts.map((p: BlogPost) => [p.id, p]));
-        
         // 如果数据有变化，更新状态
         const hasChanges = JSON.stringify(prevPosts) !== JSON.stringify(data.posts);
         if (hasChanges) {
