@@ -9,27 +9,33 @@ export function useBlogPosts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/posts`);
-        if (!response.ok) throw new Error('Failed to fetch posts');
-        const data = await response.json();
-        setPosts(data.posts);
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch posts');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPosts();
+  const fetchPosts = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Add cache-busting parameter to prevent caching
+      const response = await fetch(`${API_BASE_URL}/posts?_t=${Date.now()}`);
+      if (!response.ok) throw new Error('Failed to fetch posts');
+      const data = await response.json();
+      setPosts(data.posts);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch posts');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { posts, loading, error };
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  // Refresh function to be called after mutations
+  const refresh = useCallback(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  return { posts, loading, error, refresh };
 }
 
 export function useBlogPost(slug: string) {
@@ -37,54 +43,56 @@ export function useBlogPost(slug: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/posts/${slug}`);
-        if (!response.ok) throw new Error('Post not found');
-        const data = await response.json();
-        setPost(data.post);
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch post');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (slug) {
-      fetchPost();
+  const fetchPost = useCallback(async () => {
+    if (!slug) return;
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/posts/${slug}`);
+      if (!response.ok) throw new Error('Post not found');
+      const data = await response.json();
+      setPost(data.post);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch post');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   }, [slug]);
 
-  return { post, loading, error };
+  useEffect(() => {
+    fetchPost();
+  }, [fetchPost]);
+
+  const refresh = useCallback(() => {
+    fetchPost();
+  }, [fetchPost]);
+
+  return { post, loading, error, refresh };
 }
 
 export function useComments(postId: string) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/comments?postId=${postId}`);
-        if (!response.ok) throw new Error('Failed to fetch comments');
-        const data = await response.json();
-        setComments(data.comments);
-      } catch (err) {
-        console.error('Failed to fetch comments', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (postId) {
-      fetchComments();
+  const fetchComments = useCallback(async () => {
+    if (!postId) return;
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/comments?postId=${postId}`);
+      if (!response.ok) throw new Error('Failed to fetch comments');
+      const data = await response.json();
+      setComments(data.comments);
+    } catch (err) {
+      console.error('Failed to fetch comments', err);
+    } finally {
+      setLoading(false);
     }
   }, [postId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const addComment = useCallback(async (content: string, author: string) => {
     try {
@@ -124,7 +132,11 @@ export function useComments(postId: string) {
     }
   }, []);
 
-  return { comments, loading, addComment, likeComment };
+  const refresh = useCallback(() => {
+    fetchComments();
+  }, [fetchComments]);
+
+  return { comments, loading, addComment, likeComment, refresh };
 }
 
 export function useLikePost(postId: string, initialLikes: number = 0) {
@@ -155,6 +167,7 @@ export function useLikePost(postId: string, initialLikes: number = 0) {
         if (!likedPosts.includes(postId)) {
           likedPosts.push(postId);
         }
+        localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
         setLiked(true);
         setLikeCount((prev) => prev + 1);
       } else {

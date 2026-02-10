@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Sun, 
@@ -17,9 +17,19 @@ import {
   Eye,
   Heart,
   Settings,
-  User
+  User,
+  Search,
+  Filter,
+  X,
+  Calendar,
+  ChevronDown,
+  Award,
+  Briefcase,
+  GraduationCap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { PageTransition, HoverCard } from '@/components/PageTransition';
 import { useNavigate } from 'react-router-dom';
 import { useBlogPosts } from '@/hooks/useBlog';
@@ -45,18 +55,18 @@ function ArticleCard({ post, onClick }: { post: Post; onClick: () => void }) {
   return (
     <HoverCard>
       <div 
-        className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden cursor-pointer group"
+        className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden cursor-pointer group h-full flex flex-col"
         onClick={onClick}
       >
         <div className="aspect-video overflow-hidden">
           <motion.img 
-            src={post.coverImage} 
+            src={post.coverImage || 'https://via.placeholder.com/400x225?text=No+Image'} 
             alt={post.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             whileHover={{ scale: 1.1 }}
           />
         </div>
-        <div className="p-5">
+        <div className="p-5 flex-1 flex flex-col">
           <div className="flex flex-wrap gap-2 mb-3">
             {post.tags.slice(0, 3).map((tag) => (
               <span key={tag} className="px-2 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -67,8 +77,11 @@ function ArticleCard({ post, onClick }: { post: Post; onClick: () => void }) {
           <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2">
             {post.title}
           </h3>
-          <p className="text-sm text-gray-400 line-clamp-2 mb-4">{post.excerpt}</p>
-          <div className="flex items-center gap-4 text-xs text-gray-500">
+          <p className="text-sm text-gray-400 line-clamp-2 mb-4 flex-1">{post.excerpt}</p>
+          <div className="flex items-center gap-4 text-xs text-gray-500 pt-3 border-t border-gray-800">
+            <span className="flex items-center gap-1">
+              <Calendar size={12} /> {new Date(post.publishedAt).toLocaleDateString('zh-CN')}
+            </span>
             <span className="flex items-center gap-1">
               <Clock size={12} /> {post.readTime}min
             </span>
@@ -85,12 +98,182 @@ function ArticleCard({ post, onClick }: { post: Post; onClick: () => void }) {
   );
 }
 
+// Filter Component
+function PostFilter({ 
+  posts, 
+  filteredPosts, 
+  setFilteredPosts,
+  searchQuery,
+  setSearchQuery,
+  selectedTags,
+  setSelectedTags,
+  sortBy,
+  setSortBy
+}: { 
+  posts: Post[];
+  filteredPosts: Post[];
+  setFilteredPosts: (posts: Post[]) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  selectedTags: string[];
+  setSelectedTags: (tags: string[]) => void;
+  sortBy: 'newest' | 'oldest' | 'popular' | 'mostLiked';
+  setSortBy: (sort: 'newest' | 'oldest' | 'popular' | 'mostLiked') => void;
+}) {
+  // Get all unique tags
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    posts.forEach(post => post.tags.forEach(tag => tags.add(tag)));
+    return Array.from(tags).sort();
+  }, [posts]);
+
+  // Apply filters
+  useEffect(() => {
+    let result = [...posts];
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(post => 
+        post.title.toLowerCase().includes(query) ||
+        post.excerpt.toLowerCase().includes(query) ||
+        post.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    // Tag filter
+    if (selectedTags.length > 0) {
+      result = result.filter(post => 
+        selectedTags.some(tag => post.tags.includes(tag))
+      );
+    }
+
+    // Sort
+    switch (sortBy) {
+      case 'newest':
+        result.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+        break;
+      case 'oldest':
+        result.sort((a, b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime());
+        break;
+      case 'popular':
+        result.sort((a, b) => b.views - a.views);
+        break;
+      case 'mostLiked':
+        result.sort((a, b) => b.likes - a.likes);
+        break;
+    }
+
+    setFilteredPosts(result);
+  }, [posts, searchQuery, selectedTags, sortBy, setFilteredPosts]);
+
+  const toggleTag = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else {
+      setSelectedTags([...selectedTags, tag]);
+    }
+  };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedTags([]);
+    setSortBy('newest');
+  };
+
+  const hasFilters = searchQuery || selectedTags.length > 0 || sortBy !== 'newest';
+
+  return (
+    <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 mb-8">
+      {/* Search and Sort Row */}
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <Input
+            placeholder="搜索文章..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="newest">最新发布</option>
+            <option value="oldest">最早发布</option>
+            <option value="popular">最多浏览</option>
+            <option value="mostLiked">最多点赞</option>
+          </select>
+          {hasFilters && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={clearFilters}
+              className="border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <Filter size={18} />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Tags Filter */}
+      {allTags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <span className="text-sm text-gray-500 flex items-center gap-1 mr-2">
+            <Filter size={14} /> 标签筛选:
+          </span>
+          {allTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => toggleTag(tag)}
+              className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                selectedTags.includes(tag)
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              {tag}
+              {selectedTags.includes(tag) && <X size={12} className="inline ml-1" />}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Results Count */}
+      <div className="mt-4 text-sm text-gray-500">
+        共 <span className="text-emerald-400 font-semibold">{filteredPosts.length}</span> 篇文章
+        {selectedTags.length > 0 && (
+          <span>，已选择 {selectedTags.length} 个标签</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function BlogPage() {
   const [isDark, setIsDark] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular' | 'mostLiked'>('newest');
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   
   const { posts, loading } = useBlogPosts();
   const navigate = useNavigate();
@@ -593,7 +776,7 @@ export default function BlogPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.5 }}
-                        src={featuredPosts[currentSlide].coverImage}
+                        src={featuredPosts[currentSlide].coverImage || 'https://via.placeholder.com/800x400?text=No+Image'}
                         alt={featuredPosts[currentSlide].title}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
@@ -736,6 +919,19 @@ export default function BlogPage() {
                 <h2 style={{ fontSize: '30px', fontWeight: 'bold' }}>全部文章</h2>
               </motion.div>
 
+              {/* Filter Component */}
+              <PostFilter
+                posts={posts}
+                filteredPosts={filteredPosts}
+                setFilteredPosts={setFilteredPosts}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedTags={selectedTags}
+                setSelectedTags={setSelectedTags}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+              />
+
               {loading ? (
                 <div style={{ textAlign: 'center', padding: '64px' }}>
                   <motion.div
@@ -751,13 +947,30 @@ export default function BlogPage() {
                     }}
                   />
                 </div>
+              ) : filteredPosts.length === 0 ? (
+                <div className="text-center py-16 text-gray-500">
+                  <Search className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                  <p>没有找到匹配的文章</p>
+                  {(searchQuery || selectedTags.length > 0) && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedTags([]);
+                        setSortBy('newest');
+                      }}
+                      className="mt-4 text-emerald-400 hover:text-emerald-300"
+                    >
+                      清除筛选条件
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div style={{ 
                   display: 'grid', 
                   gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
                   gap: '24px' 
                 }}>
-                  {posts.map((post, index) => (
+                  {filteredPosts.map((post, index) => (
                     <motion.div
                       key={post.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -775,26 +988,135 @@ export default function BlogPage() {
 
           {/* About */}
           <section ref={aboutRef} style={{ padding: '80px 32px', background: bgColor }}>
-            <div style={{ maxWidth: '768px', margin: '0 auto', textAlign: 'center' }}>
-              <motion.h2 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+            <div style={{ maxWidth: '1024px', margin: '0 auto' }}>
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '24px' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '48px' }}
               >
-                关于我
-              </motion.h2>
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                style={{ fontSize: '18px', color: mutedText, lineHeight: 1.8 }}
-              >
-                我是一名热爱技术的全栈开发者，专注于构建高质量的网络应用。
-                在这个博客里，我会分享我在前端、后端、DevOps 等领域的学习心得和实践经验。
-                希望我的文章能够帮助到正在学习编程的你。
-              </motion.p>
+                <div style={{ 
+                  width: '40px', 
+                  height: '40px', 
+                  borderRadius: '12px',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <User size={20} color="#10b981" />
+                </div>
+                <h2 style={{ fontSize: '30px', fontWeight: 'bold' }}>关于我</h2>
+              </motion.div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {/* Left Column - Bio */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8">
+                    <h3 className="text-xl font-bold text-white mb-4">自我介绍</h3>
+                    <p className="text-gray-400 leading-relaxed mb-6">
+                      你好！我是一名热爱技术的全栈开发者，拥有5年以上的开发经验。我专注于构建高性能、可扩展的Web应用程序，
+                      并且对新技术充满热情。在这个博客里，我会分享我在前端、后端、DevOps等领域的学习心得和实践经验。
+                    </p>
+                    <p className="text-gray-400 leading-relaxed mb-6">
+                      我相信技术的力量可以改变世界，也希望通过我的文章能够帮助到正在学习编程的你。
+                      无论你是初学者还是资深开发者，都欢迎与我交流讨论。
+                    </p>
+                    <div className="flex gap-4">
+                      <Button className="bg-emerald-600 hover:bg-emerald-700">
+                        <Mail className="w-4 h-4 mr-2" />
+                        联系我
+                      </Button>
+                      <Button variant="outline" className="border-gray-700 text-white hover:bg-gray-800">
+                        <Github className="w-4 h-4 mr-2" />
+                        GitHub
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Right Column - Skills & Experience */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.1 }}
+                  className="space-y-6"
+                >
+                  {/* Skills */}
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                      <Award className="w-5 h-5 text-emerald-400" />
+                      专业技能
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { name: 'React / Vue', level: '95%' },
+                        { name: 'TypeScript', level: '90%' },
+                        { name: 'Node.js', level: '85%' },
+                        { name: 'PostgreSQL', level: '80%' },
+                        { name: 'Docker / K8s', level: '75%' },
+                        { name: 'AWS / Cloud', level: '70%' },
+                      ].map((skill) => (
+                        <div key={skill.name}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-300">{skill.name}</span>
+                            <span className="text-emerald-400">{skill.level}</span>
+                          </div>
+                          <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
+                              style={{ width: skill.level }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Experience */}
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                      <Briefcase className="w-5 h-5 text-emerald-400" />
+                      工作经历
+                    </h3>
+                    <div className="space-y-4">
+                      {[
+                        { title: '高级前端工程师', company: '某互联网大厂', period: '2021 - 至今' },
+                        { title: '全栈开发工程师', company: '创业公司', period: '2019 - 2021' },
+                        { title: '前端开发工程师', company: '科技公司', period: '2018 - 2019' },
+                      ].map((exp, index) => (
+                        <div key={index} className="flex items-start gap-4">
+                          <div className="w-2 h-2 rounded-full bg-emerald-400 mt-2" />
+                          <div>
+                            <div className="text-white font-medium">{exp.title}</div>
+                            <div className="text-gray-500 text-sm">{exp.company} · {exp.period}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Education */}
+                  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5 text-emerald-400" />
+                      教育背景
+                    </h3>
+                    <div className="flex items-start gap-4">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 mt-2" />
+                      <div>
+                        <div className="text-white font-medium">计算机科学与技术</div>
+                        <div className="text-gray-500 text-sm">某重点大学 · 2014 - 2018</div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
             </div>
           </section>
         </main>
