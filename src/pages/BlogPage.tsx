@@ -29,7 +29,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTransition, HoverCard } from '@/components/PageTransition';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useBlogPosts } from '@/hooks/useBlog';
 import { PostModal } from '@/components/PostModal';
 
@@ -443,13 +443,13 @@ export default function BlogPage() {
                 fontWeight: 'bold',
                 color: 'white'
               }}>
-                DB
+                DZC
               </div>
               <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>Dev Blogger</h2>
               <p style={{ color: '#10b981', fontSize: '14px', marginBottom: '12px' }}>全栈开发者</p>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '12px', color: mutedText }}>
                 <MapPin size={12} />
-                <span>中国 · 北京</span>
+                <span>中国 · 浙江</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px' }}>
@@ -915,6 +915,14 @@ export default function BlogPage() {
                   <TrendingUp size={20} color="#10b981" />
                 </div>
                 <h2 style={{ fontSize: '30px', fontWeight: 'bold' }}>全部文章</h2>
+                <div className="flex-1" />
+                <Link 
+                  to="/posts"
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                >
+                  查看全部
+                  <ArrowRight size={16} />
+                </Link>
               </motion.div>
 
               {/* Filter Component */}
