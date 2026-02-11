@@ -1,37 +1,18 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Sun, 
-  Moon, 
-  MapPin, 
-  Mail, 
-  Github, 
-  Twitter,
-  Linkedin,
-  Code2,
-  Sparkles,
-  Zap,
-  TrendingUp,
-  ArrowRight,
+  Calendar,
   Clock,
   Eye,
   Heart,
-  Settings,
-  User,
   Search,
   Filter,
   X,
-  Calendar,
-  Award,
-  Briefcase,
-  GraduationCap
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageTransition, HoverCard } from '@/components/PageTransition';
-import { useNavigate, Link } from 'react-router-dom';
-import { useRealtimePosts } from '@/hooks/useRealtime';
-import { DataStatusIndicator } from '@/components/DataStatusIndicator';
 import { PostModal } from '@/components/PostModal';
 import { useBlogPosts } from '@/hooks/useBlog';
 
