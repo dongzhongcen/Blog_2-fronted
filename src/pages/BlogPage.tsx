@@ -277,6 +277,17 @@ export default function BlogPage() {
   const { posts, loading, forceRefresh, lastUpdated, isStale } = useRealtimePosts(30000);
   const navigate = useNavigate();
 
+  // 当 posts 加载完成后，初始化 filteredPosts
+  useEffect(() => {
+    if (posts.length > 0 && filteredPosts.length === 0 && !searchQuery && selectedTags.length === 0) {
+      // 按最新发布排序初始化
+      const sortedPosts = [...posts].sort((a, b) => 
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
+      setFilteredPosts(sortedPosts);
+    }
+  }, [posts, filteredPosts.length, searchQuery, selectedTags.length]);
+
   const homeRef = useRef<HTMLDivElement | null>(null);
   const featuredRef = useRef<HTMLDivElement | null>(null);
   const postsRef = useRef<HTMLDivElement | null>(null);

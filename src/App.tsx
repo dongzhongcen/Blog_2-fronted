@@ -25,7 +25,7 @@ function AnimatedRoutes() {
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const { theme } = useTheme(); // 使用useTheme钩子
+  useTheme(); // 直接调用useTheme钩子，不需要声明theme变量
 
   return (
     <BrowserRouter>
