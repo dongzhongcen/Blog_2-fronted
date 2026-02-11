@@ -5,6 +5,7 @@ import BlogPage from '@/pages/BlogPage';
 import AllPostsPage from '@/pages/AllPostsPage';
 import AdminPage from '@/pages/AdminPage';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { useTheme } from '@/contexts/ThemeContext';
 import './App.css';
 
 // AnimatedRoutes component to handle page transitions
@@ -24,6 +25,7 @@ function AnimatedRoutes() {
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const { theme } = useTheme(); // 使用useTheme钩子
 
   return (
     <BrowserRouter>
