@@ -12,15 +12,34 @@ export function useBlogPosts() {
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
-      // Add cache-busting parameter to prevent caching
+      // 修复：添加错误处理和缓存控制
       const response = await fetch(`${API_BASE_URL}/posts?_t=${Date.now()}`);
-      if (!response.ok) throw new Error('Failed to fetch posts');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch posts: ${response.status}`);
+      }
       const data = await response.json();
-      setPosts(data.posts);
+      
+      // 修复：确保数据格式正确
+      if (!data.posts || !Array.isArray(data.posts)) {
+        throw new Error('Invalid posts data format');
+      }
+      
+      // 修复：数据验证和类型转换
+      const validatedPosts = data.posts.map((post: any) => ({
+        ...post,
+        id: String(post.id),
+        likes: Number(post.likes) || 0,
+        views: Number(post.views) || 0,
+        readTime: Number(post.readTime) || 5,
+        tags: Array.isArray(post.tags) ? post.tags : [],
+        publishedAt: post.publishedAt || new Date().toISOString()
+      }));
+      
+      setPosts(validatedPosts);
       setError(null);
     } catch (err) {
       setError('Failed to fetch posts');
-      console.error(err);
+      console.error('Error fetching posts:', err);
     } finally {
       setLoading(false);
     }
@@ -50,7 +69,23 @@ export function useBlogPost(slug: string) {
       const response = await fetch(`${API_BASE_URL}/posts/${slug}`);
       if (!response.ok) throw new Error('Post not found');
       const data = await response.json();
-      setPost(data.post);
+      
+      // 修复：数据验证和类型转换
+      if (!data.post) {
+        throw new Error('Invalid post data format');
+      }
+      
+      const validatedPost = {
+        ...data.post,
+        id: String(data.post.id),
+        likes: Number(data.post.likes) || 0,
+        views: Number(data.post.views) || 0,
+        readTime: Number(data.post.readTime) || 5,
+        tags: Array.isArray(data.post.tags) ? data.post.tags : [],
+        publishedAt: data.post.publishedAt || new Date().toISOString()
+      };
+      
+      setPost(validatedPost);
       setError(null);
     } catch (err) {
       setError('Failed to fetch post');
@@ -82,7 +117,21 @@ export function useComments(postId: string) {
       const response = await fetch(`${API_BASE_URL}/comments?postId=${postId}`);
       if (!response.ok) throw new Error('Failed to fetch comments');
       const data = await response.json();
-      setComments(data.comments);
+      
+      // 修复：确保评论数据格式正确
+      if (!data.comments || !Array.isArray(data.comments)) {
+        throw new Error('Invalid comments data format');
+      }
+      
+      // 修复：数据验证和类型转换
+      const validatedComments = data.comments.map((comment: any) => ({
+        ...comment,
+        id: String(comment.id),
+        postId: String(comment.postId),
+        likes: Number(comment.likes) || 0
+      }));
+      
+      setComments(validatedComments);
     } catch (err) {
       console.error('Failed to fetch comments', err);
     } finally {
@@ -99,14 +148,33 @@ export function useComments(postId: string) {
       const response = await fetch(`${API_BASE_URL}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId: parseInt(postId), content, author }),
+        body: JSON.stringify({ 
+          postId: parseInt(postId), 
+          content, 
+          author 
+        }),
       });
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `Failed to add comment: ${response.status}`);
       }
+      
       const data = await response.json();
-      setComments((prev) => [data.comment, ...prev]);
+      
+      // 修复：确保新评论数据格式正确
+      if (!data.comment) {
+        throw new Error('Invalid comment response');
+      }
+      
+      const newComment = {
+        ...data.comment,
+        id: String(data.comment.id),
+        postId: String(data.comment.postId),
+        likes: Number(data.comment.likes) || 0
+      };
+      
+      setComments((prev) => [newComment, ...prev]);
       return true;
     } catch (err) {
       console.error('Failed to add comment', err);
