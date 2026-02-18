@@ -100,8 +100,7 @@ function ArticleCard({ post, onClick }: { post: Post; onClick: () => void }) {
 // Filter Component
 function PostFilter({ 
   posts, 
-  filteredPosts, 
-  setFilteredPosts,
+  filteredPosts,
   searchQuery,
   setSearchQuery,
   selectedTags,
@@ -111,7 +110,6 @@ function PostFilter({
 }: { 
   posts: Post[];
   filteredPosts: Post[];
-  setFilteredPosts: (posts: Post[]) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   selectedTags: string[];
@@ -125,46 +123,6 @@ function PostFilter({
     posts.forEach(post => post.tags.forEach(tag => tags.add(tag)));
     return Array.from(tags).sort();
   }, [posts]);
-
-  // Apply filters
-  useEffect(() => {
-    let result = [...posts];
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(post => 
-        post.title.toLowerCase().includes(query) ||
-        post.excerpt.toLowerCase().includes(query) ||
-        post.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-
-    // Tag filter
-    if (selectedTags.length > 0) {
-      result = result.filter(post => 
-        selectedTags.some(tag => post.tags.includes(tag))
-      );
-    }
-
-    // Sort
-    switch (sortBy) {
-      case 'newest':
-        result.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-        break;
-      case 'oldest':
-        result.sort((a, b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime());
-        break;
-      case 'popular':
-        result.sort((a, b) => b.views - a.views);
-        break;
-      case 'mostLiked':
-        result.sort((a, b) => b.likes - a.likes);
-        break;
-    }
-
-    setFilteredPosts(result);
-  }, [posts, searchQuery, selectedTags, sortBy, setFilteredPosts]);
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -272,21 +230,49 @@ export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular' | 'mostLiked'>('newest');
-  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   
   const { posts, loading, forceRefresh, lastUpdated, isStale } = useRealtimePosts(30000);
   const navigate = useNavigate();
 
-  // 当 posts 加载完成后，初始化 filteredPosts
-  useEffect(() => {
-    if (posts.length > 0 && filteredPosts.length === 0 && !searchQuery && selectedTags.length === 0) {
-      // 按最新发布排序初始化
-      const sortedPosts = [...posts].sort((a, b) => 
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  // 使用 useMemo 计算 filteredPosts，确保数据变化时自动更新
+  const filteredPosts = useMemo(() => {
+    let result = [...posts];
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(post => 
+        post.title.toLowerCase().includes(query) ||
+        post.excerpt.toLowerCase().includes(query) ||
+        post.tags.some(tag => tag.toLowerCase().includes(query))
       );
-      setFilteredPosts(sortedPosts);
     }
-  }, [posts, filteredPosts.length, searchQuery, selectedTags.length]);
+
+    // Tag filter
+    if (selectedTags.length > 0) {
+      result = result.filter(post => 
+        selectedTags.some(tag => post.tags.includes(tag))
+      );
+    }
+
+    // Sort
+    switch (sortBy) {
+      case 'newest':
+        result.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+        break;
+      case 'oldest':
+        result.sort((a, b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime());
+        break;
+      case 'popular':
+        result.sort((a, b) => b.views - a.views);
+        break;
+      case 'mostLiked':
+        result.sort((a, b) => b.likes - a.likes);
+        break;
+    }
+
+    return result;
+  }, [posts, searchQuery, selectedTags, sortBy]);
 
   const homeRef = useRef<HTMLDivElement | null>(null);
   const featuredRef = useRef<HTMLDivElement | null>(null);
@@ -941,7 +927,6 @@ export default function BlogPage() {
               <PostFilter
                 posts={posts}
                 filteredPosts={filteredPosts}
-                setFilteredPosts={setFilteredPosts}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 selectedTags={selectedTags}
