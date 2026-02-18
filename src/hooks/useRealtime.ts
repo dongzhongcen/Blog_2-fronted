@@ -27,14 +27,31 @@ export function useRealtimePosts(refreshInterval = 30000) {
       if (!response.ok) throw new Error('Failed to fetch posts');
       const data = await response.json();
       
+      // 修复：确保数据格式正确并进行验证
+      const postsArray = data.posts || data || [];
+      if (!Array.isArray(postsArray)) {
+        throw new Error('Invalid posts data format');
+      }
+      
+      // 修复：数据验证和类型转换
+      const validatedPosts = postsArray.map((post: any) => ({
+        ...post,
+        id: String(post.id),
+        likes: Number(post.likes) || 0,
+        views: Number(post.views) || 0,
+        readTime: Number(post.readTime) || 5,
+        tags: Array.isArray(post.tags) ? post.tags : [],
+        publishedAt: post.publishedAt || new Date().toISOString()
+      }));
+      
       setPosts(prevPosts => {
         // 如果数据有变化，更新状态
-        const hasChanges = JSON.stringify(prevPosts) !== JSON.stringify(data.posts);
+        const hasChanges = JSON.stringify(prevPosts) !== JSON.stringify(validatedPosts);
         if (hasChanges) {
           setIsStale(false);
         }
         
-        return data.posts;
+        return validatedPosts;
       });
       
       setLastUpdated(new Date());
@@ -97,7 +114,25 @@ export function useRealtimePosts(refreshInterval = 30000) {
       
       if (!response.ok) throw new Error('Failed to fetch posts');
       const data = await response.json();
-      setPosts(data.posts);
+      
+      // 修复：确保数据格式正确并进行验证
+      const postsArray = data.posts || data || [];
+      if (!Array.isArray(postsArray)) {
+        throw new Error('Invalid posts data format');
+      }
+      
+      // 修复：数据验证和类型转换
+      const validatedPosts = postsArray.map((post: any) => ({
+        ...post,
+        id: String(post.id),
+        likes: Number(post.likes) || 0,
+        views: Number(post.views) || 0,
+        readTime: Number(post.readTime) || 5,
+        tags: Array.isArray(post.tags) ? post.tags : [],
+        publishedAt: post.publishedAt || new Date().toISOString()
+      }));
+      
+      setPosts(validatedPosts);
       setLastUpdated(new Date());
       setIsStale(false);
     } catch (err) {
